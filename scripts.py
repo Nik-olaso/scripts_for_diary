@@ -17,7 +17,6 @@ def remove_chastisements(student):
 def fix_marks(student):
     try:
         schoolkid = Schoolkid.objects.get(full_name__contains=student)
-        print(schoolkid)
     except Schoolkid.MultipleObjectsReturned:  
         print('Найдено слишком много учеников, уточните фамилию!')
     except Schoolkid.DoesNotExist:
