@@ -27,13 +27,19 @@ COMPLIMENT_EXAMPLES = [
 ]
 
 
+class SchoolkidException(Exception):
+    """Could not connect to db"""
+
+    pass
+
+
 def get_student(student):
     try:
         schoolkid = Schoolkid.objects.get(full_name__contains=student)
     except Schoolkid.MultipleObjectsReturned:
-        print("Найдено слишком много учеников, уточните фамилию!")
+        raise SchoolkidException("Найдено слишком много учеников, уточните фамилию!")
     except Schoolkid.DoesNotExist:
-        print("Не найдено ученика с таким именем, проверьте имя")
+        raise SchoolkidException("Не найдено ученика с таким именем, проверьте имя")
     return schoolkid
 
 
@@ -52,30 +58,24 @@ def fix_marks(student):
 
 def create_commendation(student, subject_name):
     schoolkid = get_student(student)
-    lessons = Lesson.objects.filter(
-        year_of_study=schoolkid.year_of_study,
-        group_letter=schoolkid.group_letter,
-        subject__title=subject_name,
-    )
-    teacher = Teacher.objects.filter(lesson=lessons[0])
-    date = (
+    lessons = (
         Lesson.objects.filter(
             year_of_study=schoolkid.year_of_study,
             group_letter=schoolkid.group_letter,
             subject__title=subject_name,
-            teacher=teacher[0],
         )
-        .order_by("?")
+        .order_by("-date")
         .first()
     )
+    teacher = Teacher.objects.filter(lesson=lessons).first()
     subject = Subject.objects.filter(
         title=subject_name, year_of_study=schoolkid.year_of_study
-    )
+    ).first()
     compliment = random.choice(COMPLIMENT_EXAMPLES)
     сommendation = Commendation.objects.create(
         text=compliment,
-        created=date.date,
+        created=lessons.date,
         schoolkid=schoolkid,
-        subject=subject[0],
-        teacher=teacher[0],
+        subject=subject,
+        teacher=teacher,
     )
